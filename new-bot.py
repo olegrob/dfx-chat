@@ -6,8 +6,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Initialize TaskingAI with API key and assistant ID
-taskingai.init(api_key='your_taskingai_api_key')
-assistant_id = "your_taskingai_assistant_id"
+taskingai.init(api_key='taL9voVQCs4oaZKsZDFzo5nwuI2R2Q4E')
+assistant_id = "X5lMrrRkWc3BPkp17yAoRFdF"
 
 st.title("💬 Chat with Assistant")
 
