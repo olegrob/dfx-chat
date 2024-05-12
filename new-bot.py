@@ -1,71 +1,52 @@
 import streamlit as st
 import taskingai
 import logging
-from taskingai.assistant.memory import AssistantNaiveMemory
-import sys
-st.write(sys.executable)
 
+# Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Initialize TaskingAI with API key
-taskingai.init(api_key='taL9voVQCs4oaZKsZDFzo5nwuI2R2Q4E')
-assistant_id = "X5lMrrRkWc3BPkp17yAoRFdF"
+# Initialize TaskingAI with API key and assistant ID
+taskingai.init(api_key='your_taskingai_api_key')
+assistant_id = "your_taskingai_assistant_id"
 
-def start_chat():
-    try:
-        # Fetching recent chats
-        chats = taskingai.assistant.list_chats(
-            assistant_id=assistant_id,
-            order="desc",
-            limit=20
-        )
-        welcome_message = "Tere! Ma olen Datafoxi käsitsi tehtud ja treenitud robot!"
-        chat_history = [{'message': chat.last_message.text, 'is_user': chat.last_message.role == 'user'} for chat in chats]
-        return welcome_message, chat_history
-    except Exception as e:
-        logging.error("Error starting chat: %s", e)
-        return "Error starting chat: {}".format(e), []
+st.title("💬 Chat with Assistant")
 
-def send_message(user_input):
-    if not user_input:
-        return "No message provided"
-    
+# Helper function to handle the chat interaction
+def handle_chat(user_input):
     try:
-        chat = taskingai.assistant.create_chat(assistant_id=assistant_id)
+        if 'chat_id' not in st.session_state:
+            # Start a new chat session
+            chat = taskingai.assistant.create_chat(assistant_id=assistant_id)
+            st.session_state['chat_id'] = chat.chat_id
+            st.session_state['messages'] = [{'role': 'assistant', 'content': "How can I help you?"}]
+        
+        # Log user's message
+        st.session_state['messages'].append({'role': 'user', 'content': user_input})
+        
+        # Send user message to TaskingAI
         taskingai.assistant.create_message(
             assistant_id=assistant_id,
-            chat_id=chat.chat_id,
+            chat_id=st.session_state['chat_id'],
             text=user_input,
         )
+        
+        # Get response from TaskingAI
         assistant_message = taskingai.assistant.generate_message(
             assistant_id=assistant_id,
-            chat_id=chat.chat_id,
+            chat_id=st.session_state['chat_id'],
         )
-        return assistant_message.content.text
+        
+        # Log assistant's message
+        st.session_state['messages'].append({'role': 'assistant', 'content': assistant_message.content.text})
     except Exception as e:
-        return "Error sending message: {}".format(e)
+        logging.error("Error in chat interaction: %s", e)
+        st.session_state['messages'].append({'role': 'assistant', 'content': "Error processing your message."})
 
-# Streamlit UI
-st.title('Chat with Assistant')
-if 'history' not in st.session_state:
-    st.session_state['history'] = []
+# Display chat messages
+for msg in st.session_state.get('messages', []):
+    st.chat_message(msg['role']).write(msg['content'])
 
-if st.button('Start Chat'):
-    welcome_message, history = start_chat()
-    st.session_state['history'] = history
-    st.write(welcome_message)
-
-user_input = st.text_input('Your message:', '')
-if st.button('Send'):
-    if user_input:
-        response = send_message(user_input)
-        st.session_state['history'].append({'message': user_input, 'is_user': True})
-        st.session_state['history'].append({'message': response, 'is_user': False})
-        for chat in st.session_state['history']:
-            if chat['is_user']:
-                st.text_area('You:', chat['message'], height=70)
-            else:
-                st.text_area('Assistant:', chat['message'], height=70)
-    else:
-        st.error('Please enter a message.')
-
+# Chat input for user messages
+user_input = st.chat_input()
+if user_input:
+    handle_chat(user_input)
