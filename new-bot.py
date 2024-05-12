@@ -2,6 +2,8 @@ import streamlit as st
 import taskingai
 import logging
 from taskingai.assistant.memory import AssistantNaiveMemory
+import sys
+st.write(sys.executable)
 
 logging.basicConfig(level=logging.DEBUG)
 
